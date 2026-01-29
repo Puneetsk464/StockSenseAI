@@ -97,7 +97,7 @@ strategy = st.selectbox(
         "Moving Average Crossover (Trend Following)",
         "Relative Strength Index - RSI (Momentum)",
         "Bollinger Bands (Volatility)",
-        "MACD (Trend & Momentum) - Coming Soon"
+        "MACD (Trend & Momentum)"
     ],
     index=0
 )
@@ -136,6 +136,10 @@ if strategy == "Moving Average Crossover (Trend Following)":
         - Long-term: 20-200 periods
         - Longer periods reduce false signals
         """)
+    
+    # KNOW MORE BUTTON for Moving Average Crossover
+    if st.button("📖 Know More About Moving Average Crossover", key="ma_know_more"):
+        st.switch_page("pages/ma_crossover.py")
 
 elif strategy == "Relative Strength Index - RSI (Momentum)":
     col1, col2 = st.columns([2, 1])
@@ -164,6 +168,10 @@ elif strategy == "Relative Strength Index - RSI (Momentum)":
         - Oversold: 25-35
         - Overbought: 65-75
         """)
+    
+    # KNOW MORE BUTTON for RSI
+    if st.button("📖 Know More About RSI", key="rsi_know_more"):
+        st.switch_page("pages/rsi.py")
 
 elif strategy == "Bollinger Bands (Volatility)":
     col1, col2 = st.columns([2, 1])
@@ -193,6 +201,45 @@ elif strategy == "Bollinger Bands (Volatility)":
         - Std Dev: 2.0 (standard)
         - Excellent for volatile small caps
         """)
+    
+    # KNOW MORE BUTTON for Bollinger Bands
+    if st.button("📖 Know More About Bollinger Bands", key="bb_know_more"):
+        st.switch_page("pages/bollinger_bands.py")
+
+elif strategy == "MACD (Trend & Momentum)":
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        st.markdown("""
+        ### Understanding MACD (Moving Average Convergence Divergence)
+        
+        **Concept:**
+        Trend-following momentum indicator that shows the relationship between two moving averages of prices.
+        
+        **Components:**
+        - **MACD Line**: (12-day EMA - 26-day EMA)
+        - **Signal Line**: 9-day EMA of MACD Line
+        - **Histogram**: MACD Line - Signal Line
+        
+        **Trading Signals:**
+        - **BUY**: MACD crosses above Signal Line
+        - **SELL**: MACD crosses below Signal Line
+        - **Divergence**: Price and MACD move in opposite directions
+        
+        **Best For:** Identifying trend changes and momentum shifts
+        **Challenges:** Lagging indicator, false signals in sideways markets
+        """)
+    with col2:
+        st.info("""
+        **Optimal Settings:**
+        - Fast EMA: 12 periods
+        - Slow EMA: 26 periods
+        - Signal: 9 periods
+        - Works across all timeframes
+        """)
+    
+    # KNOW MORE BUTTON for MACD
+    if st.button("📖 Know More About MACD", key="macd_know_more"):
+        st.switch_page("pages/macd.py")
 
 # --- INTERACTIVE PARAMETERS SECTION ---
 st.markdown("---")
@@ -233,6 +280,18 @@ def get_optimal_parameters(period, strategy_name, ticker_symbol):
         else:
             # Standard settings
             return {"period": 20, "std_dev": 2.0, "investment": 10000}
+    
+    elif strategy_name == "MACD (Trend & Momentum)":
+        if period == "1M":
+            return {"fast": 8, "slow": 17, "signal": 7, "investment": 10000}
+        elif period == "3M":
+            return {"fast": 10, "slow": 21, "signal": 8, "investment": 10000}
+        elif period == "6M":
+            return {"fast": 12, "slow": 26, "signal": 9, "investment": 10000}
+        elif period == "1Y":
+            return {"fast": 12, "slow": 26, "signal": 9, "investment": 10000}
+        else:  # Max
+            return {"fast": 12, "slow": 26, "signal": 9, "investment": 10000}
 
 # Get optimal parameters
 optimal_params = get_optimal_parameters(selected_period_label, strategy, selected_ticker)
@@ -279,6 +338,23 @@ elif strategy == "Bollinger Bands (Volatility)":
                          help="Higher values = wider bands, fewer signals")
     with col3:
         investment = st.number_input("Simulation Investment (₹)", 1000, 1000000, optimal_params["investment"], 1000)
+
+elif strategy == "MACD (Trend & Momentum)":
+    st.info("Optimal MACD settings for this timeframe - captures trend changes effectively")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        macd_fast = st.slider("Fast EMA", 5, 20, optimal_params["fast"],
+                            help="Faster EMA period - more sensitive to price changes")
+    with col2:
+        macd_slow = st.slider("Slow EMA", 15, 35, optimal_params["slow"],
+                            help="Slower EMA period - defines the main trend")
+    with col3:
+        macd_signal = st.slider("Signal Line", 5, 15, optimal_params["signal"],
+                              help="EMA of MACD line - generates crossover signals")
+    with col4:
+        investment = st.number_input("Simulation Investment (₹)", 1000, 1000000, optimal_params["investment"], 1000,
+                                   help="Virtual amount to test strategy performance")
 
 # --- STRATEGY EXECUTION & BACKTESTING ---
 st.markdown("---")
@@ -837,6 +913,208 @@ if st.button("🎯 Run Strategy Analysis", type="primary", use_container_width=T
             - Band width should match current market volatility
             - Works exceptionally well with volatile small-cap stocks
             - Often combined with other indicators for confirmation
+            """)
+
+        elif strategy == "MACD (Trend & Momentum)":
+            # --- MACD CALCULATION ---
+            hist_df['EMA_fast'] = hist_df['Close'].ewm(span=macd_fast).mean()
+            hist_df['EMA_slow'] = hist_df['Close'].ewm(span=macd_slow).mean()
+            hist_df['MACD'] = hist_df['EMA_fast'] - hist_df['EMA_slow']
+            hist_df['MACD_signal'] = hist_df['MACD'].ewm(span=macd_signal).mean()
+            hist_df['MACD_histogram'] = hist_df['MACD'] - hist_df['MACD_signal']
+            
+            # Generate signals
+            hist_df['MACD_Signal'] = 0
+            hist_df.loc[hist_df['MACD'] > hist_df['MACD_signal'], 'MACD_Signal'] = 1  # Bullish
+            hist_df.loc[hist_df['MACD'] < hist_df['MACD_signal'], 'MACD_Signal'] = -1  # Bearish
+            
+            hist_df['MACD_Position'] = hist_df['MACD_Signal'].diff()
+            buy_signals = hist_df[hist_df['MACD_Position'] == 2]  # From -1 to 1
+            sell_signals = hist_df[hist_df['MACD_Position'] == -2]  # From 1 to -1
+
+            # --- MACD VISUALIZATION ---
+            st.subheader("MACD Strategy Visualization")
+            
+            # Create main figure for price
+            main_fig = go.Figure()
+            
+            # Add price data based on chart type
+            if hist_chart_type == 'Line':
+                main_fig.add_trace(go.Scatter(
+                    x=hist_df.index, y=hist_df['Close'], 
+                    name='Close Price', line=dict(color='white', width=2)
+                ))
+            else:
+                main_fig.add_trace(go.Candlestick(
+                    x=hist_df.index,
+                    open=hist_df['Open'], high=hist_df['High'],
+                    low=hist_df['Low'], close=hist_df['Close'],
+                    name='OHLC'
+                ))
+            
+            # Add buy/sell signals
+            main_fig.add_trace(go.Scatter(
+                x=buy_signals.index, y=buy_signals['Close'],
+                mode='markers', name='Buy Signal',
+                marker=dict(color='green', symbol='triangle-up', size=10, line=dict(width=2, color='white'))
+            ))
+            main_fig.add_trace(go.Scatter(
+                x=sell_signals.index, y=sell_signals['Close'],
+                mode='markers', name='Sell Signal',
+                marker=dict(color='red', symbol='triangle-down', size=10, line=dict(width=2, color='white'))
+            ))
+            
+            main_fig.update_layout(
+                title=f"{stock_name} Price with MACD Signals",
+                height=400,
+                hovermode="x unified",
+                margin=dict(l=20, r=20, t=40, b=20)
+            )
+            main_fig.update_xaxes(rangeslider_visible=False)
+            st.plotly_chart(main_fig, use_container_width=True)
+            
+            # Create separate figure for MACD
+            macd_fig = go.Figure()
+            
+            # MACD line
+            macd_fig.add_trace(go.Scatter(
+                x=hist_df.index, y=hist_df['MACD'],
+                name='MACD', line=dict(color='blue', width=2)
+            ))
+            
+            # Signal line
+            macd_fig.add_trace(go.Scatter(
+                x=hist_df.index, y=hist_df['MACD_signal'],
+                name='Signal Line', line=dict(color='red', width=1.5)
+            ))
+            
+            # Histogram
+            colors = ['green' if val >= 0 else 'red' for val in hist_df['MACD_histogram']]
+            macd_fig.add_trace(go.Bar(
+                x=hist_df.index, y=hist_df['MACD_histogram'],
+                name='Histogram', marker_color=colors, opacity=0.6
+            ))
+            
+            # Zero line
+            macd_fig.add_hline(y=0, line_dash="solid", line_color="white", line_width=1)
+            
+            macd_fig.update_layout(
+                title="MACD Indicator",
+                height=300,
+                hovermode="x unified",
+                margin=dict(l=20, r=20, t=40, b=20)
+            )
+            st.plotly_chart(macd_fig, use_container_width=True)
+
+            # --- MACD BACKTEST ---
+            cash = investment
+            shares = 0
+            trades = []
+            position = 0  # 0 = no position, 1 = long
+            
+            for i in range(len(hist_df)):
+                current_macd = hist_df['MACD'].iloc[i]
+                current_signal = hist_df['MACD_signal'].iloc[i]
+                current_price = hist_df['Close'].iloc[i]
+                
+                if position == 0 and current_macd > current_signal and cash > 0:
+                    # Buy signal (MACD crosses above signal)
+                    shares = cash / current_price
+                    cash = 0
+                    position = 1
+                    trades.append({'date': hist_df.index[i], 'action': 'BUY', 'price': current_price, 'macd': current_macd})
+                
+                elif position == 1 and current_macd < current_signal and shares > 0:
+                    # Sell signal (MACD crosses below signal)
+                    cash = shares * current_price
+                    shares = 0
+                    position = 0
+                    trades.append({'date': hist_df.index[i], 'action': 'SELL', 'price': current_price, 'macd': current_macd})
+
+            final_value = cash + (shares * hist_df['Close'].iloc[-1])
+            profit_percent = ((final_value - investment) / investment) * 100
+            
+            # Buy & Hold comparison
+            buy_hold_value = investment * (hist_df['Close'].iloc[-1] / hist_df['Close'].iloc[0])
+            buy_hold_percent = ((buy_hold_value - investment) / investment) * 100
+
+            # --- MACD RESULTS ---
+            st.success("MACD Strategy Analysis Completed!")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("MACD Strategy Return", f"{profit_percent:.2f}%", delta=f"{profit_percent:.2f}%")
+            col2.metric("Buy & Hold Return", f"{buy_hold_percent:.2f}%", delta=f"{buy_hold_percent:.2f}%")
+            col3.metric("Total MACD Trades", len(trades))
+            col4.metric("Final Value", f"₹{final_value:,.2f}")
+
+            # --- MACD PERFORMANCE ANALYSIS ---
+            st.markdown("---")
+            st.subheader("MACD Performance Analysis")
+
+            price_change = ((hist_df['Close'].iloc[-1] - hist_df['Close'].iloc[0]) / hist_df['Close'].iloc[0]) * 100
+            bullish_crossovers = len(buy_signals)
+            bearish_crossovers = len(sell_signals)
+
+            if profit_percent > buy_hold_percent and profit_percent > 0:
+                st.success("**MACD Strategy Outperformed**")
+                st.write(f"**Performance:** +{profit_percent:.1f}% vs Buy & Hold +{buy_hold_percent:.1f}%")
+                
+                st.write("""
+                **Why it worked:**
+                - Effective trend identification and momentum capture
+                - Precise timing of trend changes
+                - Successful capture of major price moves
+                - Good balance between trend following and momentum
+                """)
+
+            elif profit_percent > 0:
+                st.warning("**MACD Strategy Underperformed**")
+                st.write(f"**Performance:** +{profit_percent:.1f}% vs Buy & Hold +{buy_hold_percent:.1f}%")
+                
+                st.write("""
+                **Performance factors:**
+                - Choppy market conditions created false signals
+                - Lagging nature caused late entries/exits
+                - Missed portions of rapid price movements
+                - Mixed signal quality across different market phases
+                """)
+
+            else:
+                st.error("**MACD Strategy Resulted in Loss**")
+                st.write(f"**Performance:** {profit_percent:.1f}% vs Buy & Hold +{buy_hold_percent:.1f}%")
+                
+                if bullish_crossovers == 0 or bearish_crossovers == 0:
+                    st.write("""
+                    **Why it struggled:**
+                    - Insufficient MACD crossovers for signals
+                    - Indicator remained in consolidation phase
+                    - Lack of clear trend momentum
+                    - Market conditions unsuitable for trend strategies
+                    """)
+                else:
+                    st.write("""
+                    **Why it struggled:**
+                    - False crossovers in sideways markets
+                    - Whipsaw action caused repeated losses
+                    - Poor timing during volatile periods
+                    - Failed to adapt to changing market structure
+                    """)
+
+            # MACD Statistics
+            st.markdown("**MACD Signal Analysis**")
+            macd_col1, macd_col2, macd_col3 = st.columns(3)
+            macd_col1.metric("Bullish Crossovers", bullish_crossovers)
+            macd_col2.metric("Bearish Crossovers", bearish_crossovers)
+            macd_col3.metric("Trades Executed", len(trades))
+
+            # Educational Insights
+            st.markdown("**Key Learning Points**")
+            st.write("""
+            - MACD excels in trending markets with clear momentum shifts
+            - It struggles during sideways or highly volatile periods
+            - Signal quality improves with proper parameter optimization
+            - Works best when combined with trend confirmation indicators
+            - Histogram provides early warning of momentum changes
             """)
 
 # --------------------------------------------------------------------
