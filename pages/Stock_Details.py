@@ -356,6 +356,94 @@ elif strategy == "MACD (Trend & Momentum)":
         investment = st.number_input("Simulation Investment (₹)", 1000, 1000000, optimal_params["investment"], 1000,
                                    help="Virtual amount to test strategy performance")
 
+
+def silent_backtest(strategy_name, hist_df, params, investment):
+    cash = investment
+    shares = 0
+    position = 0
+    trades = 0
+
+    df = hist_df.copy()
+
+    if strategy_name == "Moving Average Crossover (Trend Following)":
+        df["S"] = df["Close"].rolling(params["short"]).mean()
+        df["L"] = df["Close"].rolling(params["long"]).mean()
+        df["sig"] = (df["S"] > df["L"]).astype(int).diff()
+
+        for i in range(len(df)):
+            if df["sig"].iloc[i] == 1 and cash > 0:
+                shares = cash / df["Close"].iloc[i]
+                cash = 0
+                trades += 1
+            elif df["sig"].iloc[i] == -1 and shares > 0:
+                cash = shares * df["Close"].iloc[i]
+                shares = 0
+                trades += 1
+
+    elif strategy_name == "Relative Strength Index - RSI (Momentum)":
+        delta = df["Close"].diff()
+        gain = delta.where(delta > 0, 0).rolling(params["period"]).mean()
+        loss = -delta.where(delta < 0, 0).rolling(params["period"]).mean()
+        rsi = 100 - (100 / (1 + gain / loss))
+
+        for i in range(len(df)):
+            if position == 0 and rsi.iloc[i] < params["oversold"] and cash > 0:
+                shares = cash / df["Close"].iloc[i]
+                cash = 0
+                position = 1
+                trades += 1
+            elif position == 1 and rsi.iloc[i] > params["overbought"] and shares > 0:
+                cash = shares * df["Close"].iloc[i]
+                shares = 0
+                position = 0
+                trades += 1
+
+    elif strategy_name == "Bollinger Bands (Volatility)":
+        ma = df["Close"].rolling(params["period"]).mean()
+        sd = df["Close"].rolling(params["period"]).std()
+        upper = ma + params["std_dev"] * sd
+        lower = ma - params["std_dev"] * sd
+
+        for i in range(len(df)):
+            if position == 0 and df["Close"].iloc[i] <= lower.iloc[i] and cash > 0:
+                shares = cash / df["Close"].iloc[i]
+                cash = 0
+                position = 1
+                trades += 1
+            elif position == 1 and df["Close"].iloc[i] >= upper.iloc[i] and shares > 0:
+                cash = shares * df["Close"].iloc[i]
+                shares = 0
+                position = 0
+                trades += 1
+
+    elif strategy_name == "MACD (Trend & Momentum)":
+        fast = df["Close"].ewm(span=params["fast"]).mean()
+        slow = df["Close"].ewm(span=params["slow"]).mean()
+        macd = fast - slow
+        signal = macd.ewm(span=params["signal"]).mean()
+
+        for i in range(len(df)):
+            if position == 0 and macd.iloc[i] > signal.iloc[i] and cash > 0:
+                shares = cash / df["Close"].iloc[i]
+                cash = 0
+                position = 1
+                trades += 1
+            elif position == 1 and macd.iloc[i] < signal.iloc[i] and shares > 0:
+                cash = shares * df["Close"].iloc[i]
+                shares = 0
+                position = 0
+                trades += 1
+
+    final_value = cash + shares * df["Close"].iloc[-1]
+    ret = ((final_value - investment) / investment) * 100
+
+    return {
+        "return": ret,
+        "trades": trades,
+        "final": final_value
+    }
+
+
 # --- STRATEGY EXECUTION & BACKTESTING ---
 st.markdown("---")
 st.subheader("🔍 Strategy Analysis & Backtesting")
@@ -1116,6 +1204,65 @@ if st.button("🎯 Run Strategy Analysis", type="primary", use_container_width=T
             - Works best when combined with trend confirmation indicators
             - Histogram provides early warning of momentum changes
             """)
+
+    st.markdown("---")
+    st.subheader("📊 Strategy Performance Comparison")
+
+    compare_strategies = [
+        "Moving Average Crossover (Trend Following)",
+        "Relative Strength Index - RSI (Momentum)",
+        "Bollinger Bands (Volatility)",
+        "MACD (Trend & Momentum)"
+    ]
+
+    def perf_color(x):
+        if x > 0:
+            return "#16a34a"
+        elif x < 0:
+            return "#dc2626"
+        return "#eab308"
+
+    html = "<div style='display:flex;gap:16px;overflow-x:auto;padding-bottom:10px;'>"
+
+    # Base strategy
+    html += (
+    "<div style='min-width:260px;padding:16px;border-radius:12px;"
+    "border:1px solid #1f2937;background:rgba(22,163,74,0.10);'>"
+    f"<h4>{strategy.split('(')[0].strip()}</h4>"
+    f"<p style='color:{perf_color(profit_percent)};font-size:22px;'>"
+    f"{profit_percent:+.2f}%</p>"
+    f"<p>Trades: {len(trades)}</p>"
+    f"<p>Final: ₹{final_value:,.0f}</p>"
+    "<p style='opacity:0.7;'>Selected Strategy</p>"
+    "</div>"
+    )
+
+    # Other strategies
+    for s in compare_strategies:
+        if s == strategy:
+            continue
+
+        p = get_optimal_parameters(selected_period_label, s, selected_ticker)
+        r = silent_backtest(s, hist_df, p, investment)
+        gap = profit_percent - r["return"]
+
+        html += (
+        "<div style='min-width:260px;padding:16px;border-radius:12px;"
+        "border:1px solid #1f2937;background:rgba(0,0,0,0.25);'>"
+        f"<h4>{s.split('(')[0].strip()}</h4>"
+        f"<p style='color:{perf_color(r['return'])};font-size:22px;'>"
+        f"{r['return']:+.2f}%</p>"
+        f"<p>Trades: {r['trades']}</p>"
+        f"<p>Final: ₹{r['final']:,.0f}</p>"
+        f"<p style='opacity:0.7;'>vs {strategy.split('(')[0].strip()} "
+        f"({gap:+.2f}%)</p>"
+        "</div>"
+        )
+
+    html += "</div>"
+
+    st.markdown(html, unsafe_allow_html=True)
+
 
 # --------------------------------------------------------------------
 # SECTION 1 LIVE LOOP (Keep your existing working code)
