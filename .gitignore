@@ -1,12 +1,16 @@
+# ==============================
 # Python
+# ==============================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Python build / packaging
 .Python
 build/
-develop-eggs/
 dist/
+develop-eggs/
 downloads/
 eggs/
 .eggs/
@@ -20,7 +24,9 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# ==============================
+# Virtual Environments
+# ==============================
 venv/
 env/
 .venv/
@@ -28,18 +34,44 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE
+# ==============================
+# IDE / Editor
+# ==============================
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS
+# ==============================
+# OS files
+# ==============================
 .DS_Store
 Thumbs.db
 
-# Streamlit
+# ==============================
+# Streamlit cache
+# ==============================
 .streamlit/
 
-# Data files (optional - include if you don't want to commit data)
+# ==============================
+# Temporary AI / Copilot files
+# ==============================
+tmpclaude*
+tmp*
+
+# ==============================
+# Python cache folders anywhere
+# ==============================
+**/__pycache__/
+
+# ==============================
+# Secrets / credentials
+# ==============================
+serviceAccountKey.json
+*.env
+
+# ==============================
+# Optional data files
+# (keep if dataset shouldn't be pushed)
+# ==============================
 stock_data.csv

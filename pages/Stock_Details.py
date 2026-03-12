@@ -1264,7 +1264,26 @@ if st.button("🎯 Run Strategy Analysis", type="primary", use_container_width=T
     st.markdown(html, unsafe_allow_html=True)
 
 
-# --------------------------------------------------------------------
+# ====================================================================
+# BUTTON: NAVIGATE TO ADVANCED STRATEGY LAB
+# ====================================================================
+
+st.markdown("---")
+
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col2:
+    if st.button("Advanced Strategy Builder"):
+
+        # ensure stock stays in session
+        st.session_state["selected_stock"] = selected_ticker
+
+        st.switch_page("pages/Strategy_Lab_Advanced.py")
+
+st.markdown("---")
+
+
+# ====================================================================-----------------------------------------------------------------
 # SECTION 1 LIVE LOOP (Keep your existing working code)
 # --------------------------------------------------------------------
 while True:

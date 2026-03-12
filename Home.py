@@ -28,28 +28,45 @@ def set_page_style(png_file):
     #MainMenu {{visibility: hidden;}}
     [data-testid="stSidebar"] {{display: none;}}
     footer {{visibility: hidden;}}
-    
-    /* MODIFIED: Removed the background color and blur effect */
+
     .title-container {{
         text-align: center;
         padding: 2rem 0 0 0;
     }}
+
     .title-container h1 {{
         font-size: 3.5rem;
     }}
+
     h2 {{
         text-align: center;
     }}
+
+    /* Premium Institutional Button Style */
     .stButton > button {{
-        background-color: #4ade80;
-        color: white;
-        font-weight: 900;
-        border: none;
+        background-color: #0f172a;     
+        color: #f8fafc;
+        font-weight: 800;
+        border: 2px solid #facc15;     
+        border-radius: 12px;
+        height: 85px;                  
+        font-size: 1.15rem;            
+        letter-spacing: 0.6px;
+        padding: 0 28px;               
     }}
+
     .stButton > button:hover {{
-        background-color: #86efac;
+        background-color: #1e293b;     
+        border: 2px solid #fde047;     
         color: white;
-        border: none;
+    }}
+
+    .or-text {{
+        text-align: center;
+        font-weight: 900;
+        font-size: 1.25rem;
+        color: #facc15;
+        margin-top: 30px;
     }}
     </style>
     """
@@ -60,7 +77,6 @@ if os.path.exists("assets/background.png"):
     set_page_style("assets/background.png")
 else:
     st.warning("Background image not found. Please add it to the 'assets' folder.")
-
 
 # --- Page Content ---
 st.markdown(
@@ -76,7 +92,16 @@ st.header("Your Personal Investment Strategist")
 st.write("")
 st.divider()
 
-col1, col2, col3 = st.columns([1, 1.2, 1])
-with col2:
-    if st.button("Get Started →", use_container_width=True, type="primary"):
+# -------------------- BUTTONS --------------------
+col1, col_or, col2 = st.columns([1.4, 0.3, 1.4])
+
+with col1:
+    if st.button("LEARN STOCK MARKET STRATEGIES →", use_container_width=True):
         st.switch_page("pages/Sectors.py")
+
+with col_or:
+    st.markdown('<div class="or-text">OR</div>', unsafe_allow_html=True)
+
+with col2:
+    if st.button("SMART PERSONAL PORTFOLIO MANAGEMENT →", use_container_width=True):
+        st.switch_page("pages/PPM_Login.py")

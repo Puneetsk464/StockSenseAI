@@ -9,6 +9,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# -------------------- BACK BUTTON --------------------
+if st.button("← Back", key="back_home"):
+    st.switch_page("Home.py")  # Change path if needed
+
+
 # -------------------- STYLES --------------------
 st.markdown("""
 <style>
@@ -124,30 +129,19 @@ html("""
     <div class="video-track" id="track">
 
         <div class="video-card"><iframe src="https://www.youtube.com/embed/3UF0ymVdYLA" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/by9_zHQzeZk" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/RFP3ooXIiyI" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/6e8SJvEqtXo" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/Y2OfXN4jvn0" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/yzRP-mA2eiE" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/veWVgyucBqU" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/810jmf7drFw" allowfullscreen></iframe></div>
-        
         <div class="video-card"><iframe src="https://www.youtube.com/embed/WZkXcfr4r3c" allowfullscreen></iframe></div>
-        
         <div class="video-card"><iframe src="https://www.youtube.com/embed/9TCLTz3GG3g" allowfullscreen></iframe></div>
-        
         <div class="video-card"><iframe src="https://www.youtube.com/embed/4LqTDj0cwPA" allowfullscreen></iframe></div>
-
         <div class="video-card"><iframe src="https://www.youtube.com/embed/VcCiGpKsu7g" allowfullscreen></iframe></div>
 
-
+        <!-- duplicated for infinite scroll -->
         <div class="video-card"><iframe src="https://www.youtube.com/embed/3UF0ymVdYLA" allowfullscreen></iframe></div>
         <div class="video-card"><iframe src="https://www.youtube.com/embed/by9_zHQzeZk" allowfullscreen></iframe></div>
         <div class="video-card"><iframe src="https://www.youtube.com/embed/RFP3ooXIiyI" allowfullscreen></iframe></div>
@@ -164,7 +158,6 @@ html("""
     </div>
 </div>
 
-
 <script>
 const track = document.getElementById("track");
 
@@ -172,7 +165,6 @@ let pos = 0;
 let speed = 0.7;
 let paused = false;
 
-// compute half width AFTER layout
 const halfWidth = track.scrollWidth / 2;
 
 function animate() {
